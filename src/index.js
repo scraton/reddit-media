@@ -169,6 +169,14 @@ app.get('/haiku/:category?', async (req, res) => {
   res.send(`<?xml version="1.0" encoding="UTF-8"?>${xml(rss)}`);
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 listening on port ${PORT}`);
+});
+
+process.on('SIGINT', () => {
+  server.close(() => console.log('😢 Goodbye.'));
+});
+
+process.on('SIGTERM', () => {
+  server.close(() => console.log('😢 Goodbye.'));
 });
