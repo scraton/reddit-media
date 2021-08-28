@@ -1,5 +1,6 @@
 const express = require('express');
 const fetch = require('node-fetch');
+const morgan = require('morgan');
 const xml = require('xml');
 
 const app = express();
@@ -78,6 +79,8 @@ const makeYoutubeLink = ({ videoID, start, end }) => {
 
   return url.toString();
 };
+
+app.use(morgan('combined'));
 
 app.get('/', (req, res) => {
   res.send('Hello, world.');
