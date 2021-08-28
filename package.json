@@ -1,0 +1,17 @@
+{
+  "name": "reddit-media",
+  "version": "1.0.0",
+  "description": "Grab media from Reddit and export as an RSS feed",
+  "main": "src/index.js",
+  "repository": "https://github.com/scraton/reddit-media",
+  "author": "Stephen Craton <stephen@tubig.me>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.1",
+    "xml": "^1.0.1"
+  }
+}

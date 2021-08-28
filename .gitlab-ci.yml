@@ -1,0 +1,14 @@
+variables:
+  RELEASE_IMAGE_BRANCH: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+
+stages:
+  - build
+
+build_docker:
+  stage: build
+  image: docker:stable
+  before_script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+  - docker build -t $RELEASE_IMAGE_BRANCH .
+  - docker push $RELEASE_IMAGE_BRANCH
