@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const xml = require('xml');
 
 const app = express();
-const HOST = process.env.HOST || 'dev.home.lan';
+const HOST = process.env.HOST || 'localhost';
 const PORT = process.env.PORT || 3234;
 const POSTS_REQUEST_LIMIT = process.env.POSTS_REQUEST_LIMIT || 50;
 
