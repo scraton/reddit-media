@@ -102,6 +102,8 @@ app.get('/r/:subreddit/:category?', async (req, res) => {
     const pubDate = new Date(post.created_utc * 1000);
     const summary = post.selftext;
     const category = post.link_flair_text;
+    // const img = post.thumbnail;
+    const img = post.url.match(/\.(jpg|jpeg|png|gif)$/) ? post.url : undefined;
     
     if (latestPostDate === undefined || pubDate > latestPostDate) {
       latestPostDate = pubDate;
@@ -110,6 +112,8 @@ app.get('/r/:subreddit/:category?', async (req, res) => {
     if (!title || post.score === 0) {
       return undefined;
     }
+
+    console.log(post);
 
     return {
       id: post.url,
@@ -134,6 +138,12 @@ app.get('/r/:subreddit/:category?', async (req, res) => {
         },
       ] : undefined,
       summary,
+      content: img ? {
+          _attr: {
+            type: 'html',
+          },
+          _cdata: `<img src="${img}" />`,
+      } : undefined,
     };
   });
 
