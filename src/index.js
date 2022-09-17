@@ -35,6 +35,10 @@ const buildRedditUrl = (base, subreddit, category, query) => {
   return url;
 };
 
+const adjustRedditUrl = (original) => {
+  return original.replace(/reddit\.com\//, 'teddit.net/');
+};
+
 const extractVideoID = (source) => {
   const videoIDRegex = /(?:v\/|embed\/|[\/&\?]v=)([^#\&\?]+)/gi;
   const match = videoIDRegex.exec(source);
@@ -118,7 +122,7 @@ app.get('/r/:subreddit/:category?', async (req, res) => {
         {
           _attr: {
             rel: 'alternate',
-            href: post.url,
+            href: adjustRedditUrl(post.url),
           },
         }
       ],
@@ -182,7 +186,7 @@ app.get('/haiku/:category?', async (req, res) => {
       const { media } = post;
       const { oembed } = media || {};
 
-      let source = (oembed || {}).html || (oembed || {}).url || post.url;
+      let source = (oembed || {}).html || (oembed || {}).url || adjustRedditUrl(post.url);
       source = source
         .replace(/%2f/gi, '/')
         .replace(/%3d/gi, '=')
