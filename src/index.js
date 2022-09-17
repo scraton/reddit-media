@@ -36,7 +36,7 @@ const buildRedditUrl = (base, subreddit, category, query) => {
 };
 
 const adjustRedditUrl = (original) => {
-  return original.replace(/reddit\.com\//, 'teddit.net/');
+  return original.replace(/reddit\.com\//, 'reddit.craton.me/');
 };
 
 const extractVideoID = (source) => {
