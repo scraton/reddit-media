@@ -8,18 +8,18 @@ const HOST = process.env.HOST || 'localhost';
 const PORT = process.env.PORT || 3234;
 const POSTS_REQUEST_LIMIT = process.env.POSTS_REQUEST_LIMIT || 50;
 
-const buildBaseUrl = (base, category) => {
+const buildBaseUrl = (base, subreddit, category) => {
   switch (category) {
-    case 'new':    return new URL(`${base}/new.json`);
-    case 'top':    return new URL(`${base}/top.json`);
-    case 'rising': return new URL(`${base}/rising.json`);
-    case 'hot':    return new URL(`${base}/hot.json`);
-    default:       return new URL(`${base}/hot.json`);
+    case 'new':    return new URL(`${base}/${subreddit}/new.json`);
+    case 'top':    return new URL(`${base}/${subreddit}/top.json`);
+    case 'rising': return new URL(`${base}/${subreddit}/rising.json`);
+    case 'hot':    return new URL(`${base}/${subreddit}/hot.json`);
+    default:       return new URL(`${base}/${subreddit}/hot.json`);
   }
 };
 
-const buildRedditUrl = (base, category, query) => {
-  const url = buildBaseUrl(base, category);
+const buildRedditUrl = (base, subreddit, category, query) => {
+  const url = buildBaseUrl(base, subreddit, category);
   url.searchParams.set('limit', POSTS_REQUEST_LIMIT);
 
   if (category === 'new') {
@@ -86,9 +86,92 @@ app.get('/', (req, res) => {
   res.send('Hello, world.');
 });
 
-app.get('/haiku/:category?', async (req, res) => {
+app.get('/r/:subreddit/:category?', async (req, res) => {
+  const url = buildRedditUrl('https://www.reddit.com/r', req.params.subreddit, req.params.category, req.query);
+  const result = await fetch(url.toString());
+  const body = await result.json();
+  let latestPostDate;
 
-  const url = buildRedditUrl('https://www.reddit.com/r/youtubehaiku', req.params.category, req.query);
+  const posts = body.data.children.map(({ data: post }) => {
+    const title = post.title.replace(/\[[^\]]+\]/gi, '').trim();
+    const thumbnail = post.thumbnail;
+    const pubDate = new Date(post.created_utc * 1000);
+    const summary = post.selftext;
+    const category = post.link_flair_text;
+    
+    if (latestPostDate === undefined || pubDate > latestPostDate) {
+      latestPostDate = pubDate;
+    }
+
+    if (!title || post.score === 0) {
+      return undefined;
+    }
+
+    return {
+      id: post.url,
+      title,
+      updated: pubDate.toISOString(),
+      author: [
+        { name: post.author },
+      ],
+      link: [
+        {
+          _attr: {
+            rel: 'alternate',
+            href: post.url,
+          },
+        }
+      ],
+      category: category ? [
+        {
+          _attr: {
+            term: category,
+          },
+        },
+      ] : undefined,
+      summary,
+    };
+  });
+
+  const fullURL = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  const atom = {
+    feed: [
+      {
+        _attr: {
+          xmlns: 'http://www.w3.org/2005/Atom',
+        },
+      },
+      {
+        id: fullURL,
+      },
+      {
+        title: `/r/${req.params.subreddit}`,
+      },
+      {
+        link: {
+          _attr: {
+            rel: 'self',
+            href: fullURL,
+          },
+        },
+      },
+      {
+        updated: latestPostDate.toISOString(),
+      },
+      ...posts.filter((v) => Boolean(v)).map((post) => ({
+        entry: Object.keys(post).map((k) => ({
+          [k]: post[k]
+        })),
+      })),
+    ],
+  };
+
+  res.set('Content-Type', 'application/atom+xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>${xml(atom)}`);
+});
+
+app.get('/haiku/:category?', async (req, res) => {
+  const url = buildRedditUrl('https://www.reddit.com/r', 'youtubehaiku', req.params.category, req.query);
   const result = await fetch(url.toString());
   const body = await result.json();
 
@@ -113,7 +196,7 @@ app.get('/haiku/:category?', async (req, res) => {
       return undefined;
     }
 
-    if (!embed) {
+    if (!embed || post.score === 0) {
       return undefined;
     }
 
@@ -166,6 +249,7 @@ app.get('/haiku/:category?', async (req, res) => {
     ],
   };
 
+  res.set('Content-Type', 'application/rss+xml');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>${xml(rss)}`);
 });
 
